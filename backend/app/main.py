@@ -59,12 +59,24 @@ def health_db():
 
 @app.get("/api/health/migrate")
 def migrate():
-    from sqlalchemy import inspect
+    from sqlalchemy import inspect, text
+    from app.database import SessionLocal
     try:
         Base.metadata.create_all(bind=engine)
         insp = inspect(engine)
         tables = insp.get_table_names()
-        return {"status": "ok", "tables": tables}
+        columns = {c["name"] for c in insp.get_columns("users")} if "users" in tables else set()
+        missing = []
+        for col, col_type in [("role", "VARCHAR(20) DEFAULT 'admin'"), ("smtp_host", "VARCHAR(200) DEFAULT ''"), ("smtp_port", "INTEGER DEFAULT 587"), ("smtp_user", "VARCHAR(200) DEFAULT ''"), ("smtp_password", "VARCHAR(200) DEFAULT ''")]:
+            if col not in columns:
+                missing.append(col)
+                db = SessionLocal()
+                try:
+                    db.execute(text(f"ALTER TABLE users ADD COLUMN {col} {col_type}"))
+                    db.commit()
+                finally:
+                    db.close()
+        return {"status": "ok", "tables": tables, "missing_columns_added": missing}
     except Exception as e:
         return {"status": "error", "detail": f"{type(e).__name__}: {e}"}
 
