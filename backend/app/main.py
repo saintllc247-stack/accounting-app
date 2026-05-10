@@ -80,6 +80,13 @@ def migrate():
         if "is_imported" not in txn_columns:
             db = SessionLocal()
             try:
+                db.execute(text("ALTER TABLE transactions ADD COLUMN is_imported BOOLEAN DEFAULT FALSE"))
+                db.commit()
+                db.execute(text("UPDATE transactions SET is_imported = FALSE WHERE is_imported IS NULL"))
+                db.commit()
+                missing.append("is_imported")
+            except Exception:
+                db.rollback()
                 db.execute(text("ALTER TABLE transactions ADD COLUMN is_imported BOOLEAN"))
                 db.commit()
                 missing.append("is_imported")
