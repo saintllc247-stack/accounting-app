@@ -80,6 +80,7 @@ class TransactionCreate(BaseModel):
 
 class TransactionOut(TransactionCreate):
     id: int
+    is_imported: bool = False
     created_at: datetime
 
     class Config:

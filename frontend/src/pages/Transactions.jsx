@@ -4,7 +4,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
   TextField, Select, MenuItem, FormControl, InputLabel, Typography, IconButton, Chip, Stack,
 } from '@mui/material'
-import { Add, Edit, Delete, Search, Download, Upload } from '@mui/icons-material'
+import { Add, Edit, Delete, Search, Download, Upload, Clear } from '@mui/icons-material'
 import api from '../api'
 
 export default function Transactions() {
@@ -15,6 +15,7 @@ export default function Transactions() {
   const [edit, setEdit] = useState(null)
   const [filter, setFilter] = useState({ type: '', search: '' })
   const [importOpen, setImportOpen] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
   const [form, setForm] = useState({ type: 'income', amount: '', category_id: '', description: '', date: new Date().toISOString().split('T')[0], client_id: '' })
 
   const load = () => api.get('/transactions').then((r) => setTxns(r.data))
@@ -58,6 +59,9 @@ export default function Transactions() {
         <Stack direction="row" spacing={1}>
           <Button variant="outlined" startIcon={<Upload />} onClick={() => setImportOpen(true)}>
             Импорт CSV
+          </Button>
+          <Button variant="outlined" color="error" startIcon={<Clear />} onClick={() => setConfirmClear(true)}>
+            Очистить импорт
           </Button>
           <Button variant="outlined" startIcon={<Download />}
             onClick={() => window.open('/api/exports/transactions/excel', '_blank')}>
@@ -156,6 +160,25 @@ export default function Transactions() {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setImportOpen(false)} color="inherit">Закрыть</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmClear} onClose={() => setConfirmClear(false)} maxWidth="xs">
+        <DialogTitle>Удалить импортированные транзакции?</DialogTitle>
+        <DialogContent>
+          <Typography>Все транзакции, добавленные через импорт, будут безвозвратно удалены.</Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setConfirmClear(false)} color="inherit">Отмена</Button>
+          <Button color="error" variant="contained" onClick={async () => {
+            try {
+              await api.delete('/transactions/imported/clear')
+              setConfirmClear(false)
+              load()
+            } catch (err) {
+              alert(err.response?.data?.detail || 'Ошибка')
+            }
+          }}>Удалить</Button>
         </DialogActions>
       </Dialog>
 

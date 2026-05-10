@@ -1,6 +1,6 @@
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, Enum, Text
+from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, Enum, Text, Boolean
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -80,6 +80,7 @@ class Transaction(Base):
     description = Column(Text, default="")
     date = Column(Date, nullable=False)
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=True)
+    is_imported = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="transactions")

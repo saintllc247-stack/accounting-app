@@ -66,6 +66,7 @@ def migrate():
         insp = inspect(engine)
         tables = insp.get_table_names()
         columns = {c["name"] for c in insp.get_columns("users")} if "users" in tables else set()
+        txn_columns = {c["name"] for c in insp.get_columns("transactions")} if "transactions" in tables else set()
         missing = []
         for col, col_type in [("role", "VARCHAR(20) DEFAULT 'admin'"), ("smtp_host", "VARCHAR(200) DEFAULT ''"), ("smtp_port", "INTEGER DEFAULT 587"), ("smtp_user", "VARCHAR(200) DEFAULT ''"), ("smtp_password", "VARCHAR(200) DEFAULT ''")]:
             if col not in columns:
@@ -76,6 +77,14 @@ def migrate():
                     db.commit()
                 finally:
                     db.close()
+        if "is_imported" not in txn_columns:
+            db = SessionLocal()
+            try:
+                db.execute(text("ALTER TABLE transactions ADD COLUMN is_imported BOOLEAN DEFAULT 0"))
+                db.commit()
+                missing.append("is_imported")
+            finally:
+                db.close()
         return {"status": "ok", "tables": tables, "missing_columns_added": missing}
     except Exception as e:
         return {"status": "error", "detail": f"{type(e).__name__}: {e}"}

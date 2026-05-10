@@ -58,3 +58,10 @@ def delete_transaction(txn_id: int, db: Session = Depends(get_db), user: User = 
     db.delete(txn)
     db.commit()
     return {"ok": True}
+
+
+@router.delete("/imported/clear")
+def clear_imported_transactions(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    deleted = db.query(Transaction).filter(Transaction.user_id == user.id, Transaction.is_imported == True).delete()
+    db.commit()
+    return {"deleted": deleted}

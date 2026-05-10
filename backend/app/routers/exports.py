@@ -243,6 +243,7 @@ def import_transactions(
                 amount=amt,
                 description=f"Заказ #{oid} — {customer}",
                 date=parse_date_flexible(date_str),
+                is_imported=True,
             )
             db.add(txn)
 
@@ -268,6 +269,7 @@ def import_transactions(
                 amount=amt,
                 description=row.get("description", ""),
                 date=parse_date_flexible(row.get("date", "")),
+                is_imported=True,
             )
             db.add(txn)
         imported += 1
