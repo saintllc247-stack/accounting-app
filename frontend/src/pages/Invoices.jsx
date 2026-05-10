@@ -60,15 +60,28 @@ export default function Invoices() {
     }
   }
 
+  const handleDelete = async (id) => {
+    if (confirm('Удалить счёт?')) {
+      await api.delete(`/invoices/${id}`)
+      loadInvoices()
+    }
+  }
+
   const viewInvoice = (inv) => { setSelected(inv); setViewOpen(true) }
 
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5">Счета</Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={() => setOpen(true)}>
-          Выставить счёт
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button variant="outlined" startIcon={<Download />}
+            onClick={() => window.open('/api/exports/invoices/excel', '_blank')}>
+            Excel
+          </Button>
+          <Button variant="contained" startIcon={<Add />} onClick={() => setOpen(true)}>
+            Выставить счёт
+          </Button>
+        </Stack>
       </Box>
 
       <Card>
@@ -82,7 +95,7 @@ export default function Invoices() {
                   <TableCell>Дата</TableCell>
                   <TableCell>Статус</TableCell>
                   <TableCell align="right">Сумма</TableCell>
-                  <TableCell width={140}></TableCell>
+                  <TableCell width={200}></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -97,14 +110,16 @@ export default function Invoices() {
                       <TableCell align="right" fontWeight={600}>{inv.total_amount.toLocaleString()} сум</TableCell>
                       <TableCell>
                         <Stack direction="row" spacing={0.5}>
-                          <IconButton size="small" onClick={() => viewInvoice(inv)}><Visibility fontSize="small" /></IconButton>
+                          <IconButton size="small" onClick={() => viewInvoice(inv)} title="Просмотр"><Visibility fontSize="small" /></IconButton>
                           <IconButton size="small" onClick={() => handleSendEmail(inv)} title="Отправить по email"><Email fontSize="small" /></IconButton>
+                          <IconButton size="small" onClick={() => window.open(`/api/exports/invoices/${inv.id}/xlsx`, '_blank')} title="Скачать"><Download fontSize="small" /></IconButton>
                           {inv.status === 'draft' && (
                             <>
-                              <IconButton size="small" onClick={() => updateStatus(inv.id, 'sent')}><Send fontSize="small" /></IconButton>
-                              <IconButton size="small" onClick={() => updateStatus(inv.id, 'paid')}><Check fontSize="small" /></IconButton>
+                              <IconButton size="small" onClick={() => updateStatus(inv.id, 'sent')} title="Отметить отправленным"><Send fontSize="small" /></IconButton>
+                              <IconButton size="small" onClick={() => updateStatus(inv.id, 'paid')} title="Отметить оплаченным"><Check fontSize="small" /></IconButton>
                             </>
                           )}
+                          <IconButton size="small" onClick={() => handleDelete(inv.id)} title="Удалить"><Delete fontSize="small" /></IconButton>
                         </Stack>
                       </TableCell>
                     </TableRow>

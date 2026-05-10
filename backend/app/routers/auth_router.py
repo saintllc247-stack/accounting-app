@@ -70,6 +70,20 @@ def get_settings(user: User = Depends(get_current_user)):
     )
 
 
+@router.post("/change-password")
+def change_password(data: dict, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    from app.auth import hash_password, verify_password
+    old = data.get("old_password")
+    new = data.get("new_password")
+    if not old or not new:
+        raise HTTPException(400, "old_password and new_password required")
+    if not verify_password(old, user.password_hash):
+        raise HTTPException(400, "Current password is incorrect")
+    user.password_hash = hash_password(new)
+    db.commit()
+    return {"ok": True}
+
+
 @router.post("/send-invoice/{inv_id}")
 def send_invoice(inv_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     import smtplib

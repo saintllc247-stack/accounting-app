@@ -31,26 +31,26 @@ def dashboard(
     categories = db.query(Category).filter(Category.user_id == user.id).all()
     cat_map = {c.id: c.name for c in categories}
 
-    income_by_cat = (
-        db.query(Transaction.category_id, func.sum(Transaction.amount))
-        .filter(Transaction.user_id == user.id, Transaction.type == "income")
-        .group_by(Transaction.category_id)
-        .all()
+    inc_cat_q = db.query(Transaction.category_id, func.sum(Transaction.amount)).filter(
+        Transaction.user_id == user.id, Transaction.type == "income"
     )
-    expense_by_cat = (
-        db.query(Transaction.category_id, func.sum(Transaction.amount))
-        .filter(Transaction.user_id == user.id, Transaction.type == "expense")
-        .group_by(Transaction.category_id)
-        .all()
+    exp_cat_q = db.query(Transaction.category_id, func.sum(Transaction.amount)).filter(
+        Transaction.user_id == user.id, Transaction.type == "expense"
     )
+    recent_q = db.query(Transaction).filter(Transaction.user_id == user.id)
 
-    recent = (
-        db.query(Transaction)
-        .filter(Transaction.user_id == user.id)
-        .order_by(Transaction.date.desc())
-        .limit(10)
-        .all()
-    )
+    if from_date:
+        inc_cat_q = inc_cat_q.filter(Transaction.date >= from_date)
+        exp_cat_q = exp_cat_q.filter(Transaction.date >= from_date)
+        recent_q = recent_q.filter(Transaction.date >= from_date)
+    if to_date:
+        inc_cat_q = inc_cat_q.filter(Transaction.date <= to_date)
+        exp_cat_q = exp_cat_q.filter(Transaction.date <= to_date)
+        recent_q = recent_q.filter(Transaction.date <= to_date)
+
+    income_by_cat = inc_cat_q.group_by(Transaction.category_id).all()
+    expense_by_cat = exp_cat_q.group_by(Transaction.category_id).all()
+    recent = recent_q.order_by(Transaction.date.desc()).limit(10).all()
 
     return DashboardData(
         total_income=total_income,

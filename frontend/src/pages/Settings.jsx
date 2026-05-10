@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import {
   Box, Button, Card, CardContent, TextField, Typography, Stack, Divider, Snackbar, Alert,
 } from '@mui/material'
-import { Save } from '@mui/icons-material'
+import { Save, Lock } from '@mui/icons-material'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
 
 export default function Settings() {
   const { refreshUser } = useAuth()
   const [form, setForm] = useState({ company_name: '', smtp_host: '', smtp_port: 587, smtp_user: '', smtp_password: '' })
+  const [passForm, setPassForm] = useState({ old_password: '', new_password: '', confirm: '' })
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' })
 
   useEffect(() => {
@@ -25,11 +26,29 @@ export default function Settings() {
     }
   }
 
+  const handleChangePassword = async () => {
+    if (passForm.new_password !== passForm.confirm) {
+      setSnackbar({ open: true, message: 'Пароли не совпадают', severity: 'error' })
+      return
+    }
+    if (passForm.new_password.length < 4) {
+      setSnackbar({ open: true, message: 'Пароль должен быть минимум 4 символа', severity: 'error' })
+      return
+    }
+    try {
+      await api.post('/auth/change-password', { old_password: passForm.old_password, new_password: passForm.new_password })
+      setSnackbar({ open: true, message: 'Пароль изменён', severity: 'success' })
+      setPassForm({ old_password: '', new_password: '', confirm: '' })
+    } catch (e) {
+      setSnackbar({ open: true, message: e.response?.data?.detail || 'Ошибка', severity: 'error' })
+    }
+  }
+
   return (
     <Box>
       <Typography variant="h5" sx={{ mb: 3 }}>Настройки</Typography>
 
-      <Card>
+      <Card sx={{ mb: 3 }}>
         <CardContent sx={{ p: 3 }}>
           <Typography variant="subtitle1" fontWeight={600} gutterBottom>Компания</Typography>
           <TextField label="Название компании" fullWidth margin="normal"
@@ -54,6 +73,24 @@ export default function Settings() {
 
           <Box sx={{ mt: 3 }}>
             <Button variant="contained" startIcon={<Save />} onClick={handleSave}>Сохранить</Button>
+          </Box>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="subtitle1" fontWeight={600} gutterBottom>Смена пароля</Typography>
+          <TextField label="Текущий пароль" type="password" fullWidth margin="normal"
+            value={passForm.old_password} onChange={(e) => setPassForm({ ...passForm, old_password: e.target.value })} />
+          <TextField label="Новый пароль" type="password" fullWidth margin="normal"
+            value={passForm.new_password} onChange={(e) => setPassForm({ ...passForm, new_password: e.target.value })} />
+          <TextField label="Подтвердите пароль" type="password" fullWidth margin="normal"
+            value={passForm.confirm} onChange={(e) => setPassForm({ ...passForm, confirm: e.target.value })} />
+          <Box sx={{ mt: 2 }}>
+            <Button variant="contained" startIcon={<Lock />} onClick={handleChangePassword}
+              disabled={!passForm.old_password || !passForm.new_password || !passForm.confirm}>
+              Сменить пароль
+            </Button>
           </Box>
         </CardContent>
       </Card>

@@ -88,8 +88,8 @@ def export_invoices_excel(db: Session = Depends(get_db), user: User = Depends(ge
         headers={"Content-Disposition": f"attachment; filename=invoices.xlsx"})
 
 
-@router.get("/invoices/{inv_id}/pdf")
-def export_invoice_pdf(inv_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+@router.get("/invoices/{inv_id}/xlsx")
+def export_invoice_xlsx(inv_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     from openpyxl import Workbook
     from openpyxl.styles import Font, Alignment, Border, Side
 

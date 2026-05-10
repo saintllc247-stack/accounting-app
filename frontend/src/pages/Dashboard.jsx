@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Grid, Card, CardContent, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Skeleton, Box,
+  TableHead, TableRow, Paper, Skeleton, Box, TextField, Button, Stack,
 } from '@mui/material'
-import { TrendingUp, TrendingDown, AccountBalanceWallet } from '@mui/icons-material'
+import { TrendingUp, TrendingDown, AccountBalanceWallet, FilterAlt } from '@mui/icons-material'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import api from '../api'
 
@@ -17,10 +17,17 @@ const statCards = [
 
 export default function Dashboard() {
   const [data, setData] = useState(null)
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
 
-  useEffect(() => {
-    api.get('/reports/dashboard').then((r) => setData(r.data))
-  }, [])
+  const load = useCallback(() => {
+    const params = {}
+    if (dateFrom) params.from = dateFrom
+    if (dateTo) params.to = dateTo
+    api.get('/reports/dashboard', { params }).then((r) => setData(r.data))
+  }, [dateFrom, dateTo])
+
+  useEffect(() => { load() }, [load])
 
   if (!data) return (
     <Grid container spacing={3}>
@@ -30,6 +37,20 @@ export default function Dashboard() {
 
   return (
     <Grid container spacing={3}>
+      <Grid item xs={12}>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <TextField label="От" type="date" size="small"
+            InputLabelProps={{ shrink: true }}
+            value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          <TextField label="До" type="date" size="small"
+            InputLabelProps={{ shrink: true }}
+            value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          <Button variant="contained" startIcon={<FilterAlt />} onClick={load}>Применить</Button>
+          {(dateFrom || dateTo) && (
+            <Button variant="text" onClick={() => { setDateFrom(''); setDateTo('') }}>Сбросить</Button>
+          )}
+        </Stack>
+      </Grid>
       {statCards.map(({ key, label, icon, color, bg }) => (
         <Grid item xs={12} md={4} key={key}>
           <Card sx={{ bgcolor: bg, border: 'none', boxShadow: 'none' }}>
