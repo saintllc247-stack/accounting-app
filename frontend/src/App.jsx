@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Layout from './components/Layout'
+import ErrorBoundary from './components/ErrorBoundary'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
@@ -20,10 +21,10 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
-        <Route index element={<Dashboard />} />
-        <Route path="transactions" element={<Transactions />} />
-        <Route path="clients" element={<Clients />} />
-        <Route path="invoices" element={<Invoices />} />
+        <Route index element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+        <Route path="transactions" element={<ErrorBoundary><Transactions /></ErrorBoundary>} />
+        <Route path="clients" element={<ErrorBoundary><Clients /></ErrorBoundary>} />
+        <Route path="invoices" element={<ErrorBoundary><Invoices /></ErrorBoundary>} />
       </Route>
     </Routes>
   )
