@@ -3,6 +3,6 @@ __pycache__/
 *.pyo
 .env
 *.db
-backend/static/
+# backend/static/
 node_modules/
 dist/
