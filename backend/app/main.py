@@ -1,4 +1,5 @@
 from pathlib import Path
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,9 +9,17 @@ from app.database import engine, Base
 from app.config import settings
 from app.routers import auth_router, categories, clients, transactions, invoices, reports
 
-Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Accounting App", version="1.0.0", debug=settings.DEBUG)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception:
+        pass
+    yield
+
+
+app = FastAPI(title="Accounting App", version="1.0.0", debug=settings.DEBUG, lifespan=lifespan)
 
 origins = [o.strip() for o in settings.CORS_ORIGINS.split(",")]
 app.add_middleware(
