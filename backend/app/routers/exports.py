@@ -215,26 +215,52 @@ def import_transactions(
 
     marketplace = "orderId" in headers or "order amount" in headers
 
+    seen_order_ids = set()
+    created_clients = {}
+
     for row in rows:
         if marketplace:
+            oid = str(row.get("orderId", "")).strip()
+            if oid in seen_order_ids:
+                continue
+            seen_order_ids.add(oid)
+
             try:
-                raw = str(row.get("order amount", "0")).replace(",", ".").replace(" ", "")
+                raw = str(row.get("order amount", "0")).replace(",", ".").strip()
                 amt = float(raw)
             except ValueError:
                 continue
+            if amt <= 0:
+                continue
+
             date_str = row.get("acceptedDate") or row.get("createdDate") or ""
+            customer = row.get("customer", "").strip()
+            phone = str(row.get("customerPhone", "")).strip().replace(",", "")
+
             txn = Transaction(
                 user_id=user.id,
                 type="income",
                 amount=amt,
-                description=f"Заказ #{row.get('orderId', '')} — {row.get('customer', '').strip()}",
+                description=f"Заказ #{oid} — {customer}",
                 date=parse_date_flexible(date_str),
             )
+            db.add(txn)
+
+            if customer and customer not in created_clients:
+                existing = db.query(Client).filter(Client.user_id == user.id, Client.name == customer).first()
+                if not existing:
+                    cl = Client(user_id=user.id, name=customer, email="", phone=phone, address="", tin="")
+                    db.add(cl)
+                    created_clients[customer] = True
+                else:
+                    created_clients[customer] = True
         else:
             try:
-                raw = str(row.get("amount", "0")).replace(",", ".").replace(" ", "")
+                raw = str(row.get("amount", "0")).replace(",", ".").strip()
                 amt = float(raw)
             except ValueError:
+                continue
+            if amt <= 0:
                 continue
             txn = Transaction(
                 user_id=user.id,
@@ -243,7 +269,7 @@ def import_transactions(
                 description=row.get("description", ""),
                 date=parse_date_flexible(row.get("date", "")),
             )
-        db.add(txn)
+            db.add(txn)
         imported += 1
     db.commit()
     return {"imported": imported}
