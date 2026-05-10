@@ -4,7 +4,10 @@ import {
   TableHead, TableRow, Paper, Skeleton, Box,
 } from '@mui/material'
 import { TrendingUp, TrendingDown, AccountBalanceWallet } from '@mui/icons-material'
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import api from '../api'
+
+const COLORS = ['#2563eb', '#16a34a', '#ea580c', '#7c3aed', '#0891b2', '#ca8a04', '#dc2626', '#9333ea']
 
 const statCards = [
   { key: 'total_income', label: 'Доходы', icon: <TrendingUp />, color: '#16a34a', bg: '#f0fdf4' },
@@ -48,10 +51,16 @@ export default function Dashboard() {
           <CardContent>
             <Typography variant="h6" gutterBottom>Доходы по категориям</Typography>
             {data.income_by_category.length === 0
-              ? <Typography color="text.secondary">Нет данных</Typography>
-              : data.income_by_category.map(c => (
-                  <Typography key={c.name}>{c.name}: {Number(c.amount).toLocaleString()} сум</Typography>
-                ))
+              ? <Typography color="text.secondary" py={4} textAlign="center">Нет данных</Typography>
+              : <Box sx={{ width: '100%', height: 300 }}>
+                  <ResponsiveContainer>
+                    <PieChart>
+                      <Pie data={data.income_by_category} dataKey="amount" nameKey="name" cx="50%" cy="50%" outerRadius={100}>
+                        {data.income_by_category.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Box>
             }
           </CardContent>
         </Card>
@@ -62,10 +71,16 @@ export default function Dashboard() {
           <CardContent>
             <Typography variant="h6" gutterBottom>Расходы по категориям</Typography>
             {data.expense_by_category.length === 0
-              ? <Typography color="text.secondary">Нет данных</Typography>
-              : data.expense_by_category.map(c => (
-                  <Typography key={c.name}>{c.name}: {Number(c.amount).toLocaleString()} сум</Typography>
-                ))
+              ? <Typography color="text.secondary" py={4} textAlign="center">Нет данных</Typography>
+              : <Box sx={{ width: '100%', height: 300 }}>
+                  <ResponsiveContainer>
+                    <PieChart>
+                      <Pie data={data.expense_by_category} dataKey="amount" nameKey="name" cx="50%" cy="50%" outerRadius={100}>
+                        {data.expense_by_category.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Box>
             }
           </CardContent>
         </Card>
