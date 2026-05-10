@@ -172,26 +172,74 @@ def export_invoice_xlsx(inv_id: int, db: Session = Depends(get_db), user: User =
         headers={"Content-Disposition": f"attachment; filename=invoice_{inv.invoice_number}.xlsx"})
 
 
+def parse_date_flexible(val: str) -> date:
+    from datetime import datetime
+    for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%d.%m.%Y %H:%M", "%Y-%m-%dT%H:%M:%S"):
+        try:
+            return datetime.strptime(val.strip(), fmt).date()
+        except ValueError:
+            continue
+    return date.today()
+
+
 @router.post("/transactions/import")
 def import_transactions(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    from fastapi import HTTPException
     from datetime import datetime
+    from io import BytesIO
 
-    content = file.file.read().decode("utf-8-sig")
-    reader = csv.DictReader(content.splitlines())
     imported = 0
-    for row in reader:
-        txn = Transaction(
-            user_id=user.id,
-            type=row.get("type", "income"),
-            amount=float(row.get("amount", 0)),
-            description=row.get("description", ""),
-            date=datetime.strptime(row.get("date", ""), "%Y-%m-%d").date(),
-        )
+    rows = []
+
+    if file.filename and file.filename.endswith(".xlsx"):
+        from openpyxl import load_workbook
+        wb = load_workbook(BytesIO(file.file.read()), read_only=True)
+        ws = wb.active
+        headers = [c.value for c in next(ws.iter_rows(min_row=1, max_row=1))]
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            rows.append(dict(zip(headers, row)))
+    else:
+        content = file.file.read().decode("utf-8-sig")
+        rows = list(csv.DictReader(content.splitlines()))
+
+    if not rows:
+        return {"imported": 0}
+
+    headers = set(rows[0].keys())
+
+    marketplace = "orderId" in headers or "order amount" in headers
+
+    for row in rows:
+        if marketplace:
+            try:
+                raw = str(row.get("order amount", "0")).replace(",", ".").replace(" ", "")
+                amt = float(raw)
+            except ValueError:
+                continue
+            date_str = row.get("acceptedDate") or row.get("createdDate") or ""
+            txn = Transaction(
+                user_id=user.id,
+                type="income",
+                amount=amt,
+                description=f"Заказ #{row.get('orderId', '')} — {row.get('customer', '').strip()}",
+                date=parse_date_flexible(date_str),
+            )
+        else:
+            try:
+                raw = str(row.get("amount", "0")).replace(",", ".").replace(" ", "")
+                amt = float(raw)
+            except ValueError:
+                continue
+            txn = Transaction(
+                user_id=user.id,
+                type=row.get("type", "income"),
+                amount=amt,
+                description=row.get("description", ""),
+                date=parse_date_flexible(row.get("date", "")),
+            )
         db.add(txn)
         imported += 1
     db.commit()
