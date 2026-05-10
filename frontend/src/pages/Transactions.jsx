@@ -135,18 +135,22 @@ export default function Transactions() {
         <DialogTitle sx={{ pb: 1 }}>Импорт транзакций из CSV</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Формат: type,amount,description,date (например: income,100000,оплата,2026-05-10)
+            Поддерживаются CSV и Excel (.xlsx). Автоопределение формата: обычный (type,amount,description,date) или выгрузка маркетплейса (orderId, order amount, customer).
           </Typography>
           <Button variant="contained" component="label">
             Выбрать файл
-            <input type="file" accept=".csv" hidden onChange={async (e) => {
+            <input type="file" accept=".csv,.xlsx" hidden onChange={async (e) => {
               const file = e.target.files?.[0]
               if (!file) return
               const formData = new FormData()
               formData.append('file', file)
-              await api.post('/exports/transactions/import', formData)
-              setImportOpen(false)
-              load()
+              try {
+                await api.post('/exports/transactions/import', formData)
+                setImportOpen(false)
+                load()
+              } catch (err) {
+                alert(err.response?.data?.detail || 'Ошибка импорта')
+              }
             }} />
           </Button>
         </DialogContent>
