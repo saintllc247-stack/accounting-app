@@ -7,3 +7,5 @@ __pycache__/
 node_modules/
 dist/
 .venv/
+frontend/android/
+frontend/.env.production
