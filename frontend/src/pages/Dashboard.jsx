@@ -17,17 +17,29 @@ const statCards = [
 
 export default function Dashboard() {
   const [data, setData] = useState(null)
+  const [error, setError] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
 
   const load = useCallback(() => {
+    setError('')
     const params = {}
     if (dateFrom) params.from = dateFrom
     if (dateTo) params.to = dateTo
-    api.get('/reports/dashboard', { params }).then((r) => setData(r.data))
+    api.get('/reports/dashboard', { params }).then((r) => setData(r.data)).catch((e) => {
+      setError(e.response?.data?.detail || e.message || 'Ошибка загрузки')
+    })
   }, [dateFrom, dateTo])
 
   useEffect(() => { load() }, [load])
+
+  if (error) return (
+    <Box sx={{ p: 4, textAlign: 'center' }}>
+      <Typography color="error" variant="h6" gutterBottom>Ошибка загрузки</Typography>
+      <Typography color="text.secondary" sx={{ mb: 2 }}>{error}</Typography>
+      <Button variant="outlined" onClick={load}>Повторить</Button>
+    </Box>
+  )
 
   if (!data) return (
     <Grid container spacing={3}>
