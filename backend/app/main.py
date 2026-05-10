@@ -1,5 +1,4 @@
 from pathlib import Path
-from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,16 +9,14 @@ from app.config import settings
 from app.routers import auth_router, categories, clients, transactions, invoices, reports
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    try:
-        Base.metadata.create_all(bind=engine)
-    except Exception:
-        pass
-    yield
+print("Creating database tables...", flush=True)
+try:
+    Base.metadata.create_all(bind=engine)
+    print("Database tables created successfully", flush=True)
+except Exception as e:
+    print(f"ERROR creating tables: {e}", flush=True)
 
-
-app = FastAPI(title="Accounting App", version="1.0.0", debug=settings.DEBUG, lifespan=lifespan)
+app = FastAPI(title="Accounting App", version="1.0.0", debug=settings.DEBUG)
 
 origins = [o.strip() for o in settings.CORS_ORIGINS.split(",")]
 app.add_middleware(
