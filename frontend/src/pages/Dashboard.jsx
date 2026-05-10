@@ -24,14 +24,14 @@ export default function Dashboard() {
 
   if (!data) return (
     <Grid container spacing={3}>
-      {[1,2,3].map(i => <Grid size={{ xs: 12, md: 4 }} key={i}><Skeleton variant="rounded" height={120} /></Grid>)}
+      {[1,2,3].map(i => <Grid item xs={12} md={4} key={i}><Skeleton variant="rounded" height={120} /></Grid>)}
     </Grid>
   )
 
   return (
     <Grid container spacing={3}>
       {statCards.map(({ key, label, icon, color, bg }) => (
-        <Grid size={{ xs: 12, md: 4 }} key={key}>
+        <Grid item xs={12} md={4} key={key}>
           <Card sx={{ bgcolor: bg, border: 'none', boxShadow: 'none' }}>
             <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Box sx={{ color, display: 'flex' }}>{icon}</Box>
@@ -46,7 +46,7 @@ export default function Dashboard() {
         </Grid>
       ))}
 
-      <Grid size={{ xs: 12, md: 6 }}>
+      <Grid item xs={12} md={6}>
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>Доходы по категориям</Typography>
@@ -66,7 +66,7 @@ export default function Dashboard() {
         </Card>
       </Grid>
 
-      <Grid size={{ xs: 12, md: 6 }}>
+      <Grid item xs={12} md={6}>
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>Расходы по категориям</Typography>
@@ -86,7 +86,7 @@ export default function Dashboard() {
         </Card>
       </Grid>
 
-      <Grid size={{ xs: 12 }}>
+      <Grid item xs={12}>
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>Последние транзакции</Typography>
