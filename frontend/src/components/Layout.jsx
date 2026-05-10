@@ -7,7 +7,7 @@ import {
 } from '@mui/material'
 import {
   Menu as MenuIcon, Dashboard, AccountBalanceWallet, People, Receipt, Settings, Logout,
-  AccountBalance, DarkMode, LightMode, Category,
+  AccountBalance, DarkMode, LightMode, Category, InsertDriveFile,
 } from '@mui/icons-material'
 
 const drawerWidth = 270
@@ -18,6 +18,7 @@ const menuItems = [
   { text: 'Клиенты', icon: <People />, path: '/clients' },
   { text: 'Счета', icon: <Receipt />, path: '/invoices' },
   { text: 'Категории', icon: <Category />, path: '/categories' },
+  { text: 'Файлы', icon: <InsertDriveFile />, path: '/documents' },
   { text: 'Настройки', icon: <Settings />, path: '/settings' },
 ]
 

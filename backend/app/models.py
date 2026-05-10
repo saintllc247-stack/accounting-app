@@ -39,6 +39,7 @@ class User(Base):
     transactions = relationship("Transaction", back_populates="user", cascade="all, delete-orphan")
     invoices = relationship("Invoice", back_populates="user", cascade="all, delete-orphan")
     categories = relationship("Category", back_populates="user", cascade="all, delete-orphan")
+    documents = relationship("Document", back_populates="user", cascade="all, delete-orphan")
 
 
 class Client(Base):
@@ -118,3 +119,17 @@ class InvoiceItem(Base):
     amount = Column(Float, default=0)
 
     invoice = relationship("Invoice", back_populates="items")
+
+
+class Document(Base):
+    __tablename__ = "documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    original_name = Column(String(500), nullable=False)
+    stored_name = Column(String(100), nullable=False)
+    file_size = Column(Integer, default=0)
+    mime_type = Column(String(100), default="")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", back_populates="documents")

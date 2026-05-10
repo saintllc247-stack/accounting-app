@@ -116,6 +116,17 @@ class InvoiceOut(BaseModel):
         from_attributes = True
 
 
+class DocumentOut(BaseModel):
+    id: int
+    original_name: str
+    file_size: int
+    mime_type: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class DashboardData(BaseModel):
     total_income: float
     total_expense: float

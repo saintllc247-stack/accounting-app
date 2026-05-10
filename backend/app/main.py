@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.database import engine, Base
 from app.config import settings
-from app.routers import auth_router, categories, clients, transactions, invoices, reports, exports
+from app.routers import auth_router, categories, clients, transactions, invoices, reports, exports, documents
 
 app = FastAPI(title="Accounting App", version="1.0.0", debug=settings.DEBUG)
 
@@ -35,6 +35,7 @@ app.include_router(transactions.router)
 app.include_router(invoices.router)
 app.include_router(reports.router)
 app.include_router(exports.router)
+app.include_router(documents.router)
 
 
 @app.get("/api/health")
