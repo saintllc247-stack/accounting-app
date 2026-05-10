@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   Box, Button, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  TextField, Select, MenuItem, FormControl, InputLabel, Typography, IconButton, Chip, Stack,
+  TextField, Select, MenuItem, FormControl, InputLabel, Typography, IconButton, Chip, Stack, Checkbox,
 } from '@mui/material'
 import { Add, Edit, Delete, Search, Download, Upload, Clear } from '@mui/icons-material'
 import api from '../api'
@@ -16,6 +16,8 @@ export default function Transactions() {
   const [filter, setFilter] = useState({ type: '', search: '' })
   const [importOpen, setImportOpen] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
+  const [selected, setSelected] = useState(new Set())
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
   const [form, setForm] = useState({ type: 'income', amount: '', category_id: '', description: '', date: new Date().toISOString().split('T')[0], client_id: '' })
 
   const load = () => api.get('/transactions').then((r) => setTxns(r.data))
@@ -52,11 +54,47 @@ export default function Transactions() {
     return true
   })
 
+  const filteredIds = filtered.map(t => t.id)
+  const allSelected = filteredIds.length > 0 && filteredIds.every(id => selected.has(id))
+
+  const toggleSelect = (id) => {
+    const next = new Set(selected)
+    if (next.has(id)) next.delete(id); else next.add(id)
+    setSelected(next)
+  }
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelected(new Set([...selected].filter(id => !filteredIds.includes(id))))
+    } else {
+      const next = new Set(selected)
+      filteredIds.forEach(id => next.add(id))
+      setSelected(next)
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    const ids = [...selected]
+    try {
+      await api.post('/transactions/bulk-delete', { ids })
+      setSelected(new Set())
+      setConfirmBulkDelete(false)
+      load()
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Ошибка')
+    }
+  }
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="h5">Транзакции</Typography>
         <Stack direction="row" spacing={1}>
+          {selected.size > 0 && (
+            <Button color="error" variant="outlined" startIcon={<Delete />} onClick={() => setConfirmBulkDelete(true)}>
+              Удалить ({selected.size})
+            </Button>
+          )}
           <Button variant="outlined" startIcon={<Upload />} onClick={() => setImportOpen(true)}>
             Импорт CSV
           </Button>
@@ -94,6 +132,9 @@ export default function Transactions() {
             <Table>
               <TableHead>
                 <TableRow>
+                  <TableCell padding="checkbox">
+                    <Checkbox checked={allSelected} indeterminate={selected.size > 0 && !allSelected} onChange={toggleSelectAll} />
+                  </TableCell>
                   <TableCell>Дата</TableCell>
                   <TableCell>Тип</TableCell>
                   <TableCell>Категория</TableCell>
@@ -108,7 +149,10 @@ export default function Transactions() {
                   const catName = categories.find(c => c.id === t.category_id)?.name
                   const clientName = clients.find(c => c.id === t.client_id)?.name
                   return (
-                    <TableRow key={t.id} hover>
+                    <TableRow key={t.id} hover selected={selected.has(t.id)}>
+                      <TableCell padding="checkbox">
+                        <Checkbox checked={selected.has(t.id)} onChange={() => toggleSelect(t.id)} />
+                      </TableCell>
                       <TableCell>{t.date}</TableCell>
                       <TableCell>
                         <Typography color={t.type === 'income' ? 'success.main' : 'error.main'} fontWeight={600}>
@@ -127,7 +171,7 @@ export default function Transactions() {
                   )
                 })}
                 {filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={7} align="center" sx={{ py: 4 }}>Нет транзакций</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} align="center" sx={{ py: 4 }}>Нет транзакций</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
@@ -160,6 +204,17 @@ export default function Transactions() {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setImportOpen(false)} color="inherit">Закрыть</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmBulkDelete} onClose={() => setConfirmBulkDelete(false)} maxWidth="xs">
+        <DialogTitle>Удалить выбранные транзакции?</DialogTitle>
+        <DialogContent>
+          <Typography>Будет удалено {selected.size} транзакци{selected.size === 1 ? 'я' : selected.size >= 2 && selected.size <= 4 ? 'и' : 'й'}.</Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setConfirmBulkDelete(false)} color="inherit">Отмена</Button>
+          <Button color="error" variant="contained" onClick={handleBulkDelete}>Удалить</Button>
         </DialogActions>
       </Dialog>
 

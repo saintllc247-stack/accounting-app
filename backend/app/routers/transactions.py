@@ -1,6 +1,7 @@
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -58,6 +59,17 @@ def delete_transaction(txn_id: int, db: Session = Depends(get_db), user: User = 
     db.delete(txn)
     db.commit()
     return {"ok": True}
+
+
+class BulkDeleteIds(BaseModel):
+    ids: list[int]
+
+
+@router.post("/bulk-delete")
+def bulk_delete_transactions(data: BulkDeleteIds, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    deleted = db.query(Transaction).filter(Transaction.id.in_(data.ids), Transaction.user_id == user.id).delete(synchronize_session=False)
+    db.commit()
+    return {"deleted": deleted}
 
 
 @router.delete("/imported/clear")
