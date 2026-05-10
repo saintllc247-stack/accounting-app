@@ -10,14 +10,6 @@ from app.database import engine, Base
 from app.config import settings
 from app.routers import auth_router, categories, clients, transactions, invoices, reports
 
-
-print("Creating database tables...", flush=True)
-try:
-    Base.metadata.create_all(bind=engine)
-    print("Database tables created successfully", flush=True)
-except Exception as e:
-    print(f"ERROR creating tables: {e}", flush=True)
-
 app = FastAPI(title="Accounting App", version="1.0.0", debug=settings.DEBUG)
 
 
@@ -51,15 +43,29 @@ def health():
 
 @app.get("/api/health/db")
 def health_db():
-    from sqlalchemy import text
+    from sqlalchemy import text, inspect
     from app.database import SessionLocal
     try:
         db = SessionLocal()
         db.execute(text("SELECT 1"))
         db.close()
-        return {"status": "ok", "database": "connected"}
+        insp = inspect(engine)
+        tables = insp.get_table_names()
+        return {"status": "ok", "database": "connected", "tables": tables}
     except Exception as e:
-        return {"status": "error", "database": str(e)}
+        return {"status": "error", "database": str(e), "tables": []}
+
+
+@app.get("/api/health/migrate")
+def migrate():
+    from sqlalchemy import inspect
+    try:
+        Base.metadata.create_all(bind=engine)
+        insp = inspect(engine)
+        tables = insp.get_table_names()
+        return {"status": "ok", "tables": tables}
+    except Exception as e:
+        return {"status": "error", "detail": f"{type(e).__name__}: {e}"}
 
 
 static_dir = Path(__file__).resolve().parent.parent / "static"
