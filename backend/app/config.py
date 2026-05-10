@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 
 
 class Settings(BaseSettings):
@@ -11,6 +12,13 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def empty_str_to_none(cls, v):
+        if v is None or v == "":
+            return "sqlite:///./accounting.db"
+        return v
 
 
 settings = Settings()
