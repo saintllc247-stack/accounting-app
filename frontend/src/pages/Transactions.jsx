@@ -2,37 +2,35 @@ import { useState, useEffect } from 'react'
 import {
   Box, Button, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  TextField, Select, MenuItem, FormControl, InputLabel, Typography, IconButton,
+  TextField, Select, MenuItem, FormControl, InputLabel, Typography, IconButton, Chip, Stack,
 } from '@mui/material'
-import { Add, Edit, Delete } from '@mui/icons-material'
+import { Add, Edit, Delete, Search } from '@mui/icons-material'
 import api from '../api'
 
 export default function Transactions() {
   const [txns, setTxns] = useState([])
   const [categories, setCategories] = useState([])
+  const [clients, setClients] = useState([])
   const [open, setOpen] = useState(false)
   const [edit, setEdit] = useState(null)
+  const [filter, setFilter] = useState({ type: '', search: '' })
   const [form, setForm] = useState({ type: 'income', amount: '', category_id: '', description: '', date: new Date().toISOString().split('T')[0], client_id: '' })
 
   const load = () => api.get('/transactions').then((r) => setTxns(r.data))
   const loadCats = () => api.get('/categories').then((r) => setCategories(r.data))
+  const loadClients = () => api.get('/clients').then((r) => setClients(r.data))
 
-  useEffect(() => { load(); loadCats() }, [])
+  useEffect(() => { load(); loadCats(); loadClients() }, [])
 
   const handleSave = async () => {
     const payload = { ...form, amount: parseFloat(form.amount), category_id: form.category_id ? Number(form.category_id) : null, client_id: form.client_id ? Number(form.client_id) : null }
     if (edit) await api.put(`/transactions/${edit.id}`, payload)
     else await api.post('/transactions', payload)
-    setOpen(false)
-    setEdit(null)
-    load()
+    setOpen(false); setEdit(null); load()
   }
 
   const handleDelete = async (id) => {
-    if (confirm('Удалить транзакцию?')) {
-      await api.delete(`/transactions/${id}`)
-      load()
-    }
+    if (confirm('Удалить транзакцию?')) { await api.delete(`/transactions/${id}`); load() }
   }
 
   const openEdit = (t) => {
@@ -41,49 +39,81 @@ export default function Transactions() {
     setOpen(true)
   }
 
+  const filtered = txns.filter(t => {
+    if (filter.type && t.type !== filter.type) return false
+    if (filter.search) {
+      const q = filter.search.toLowerCase()
+      const catName = categories.find(c => c.id === t.category_id)?.name || ''
+      const clientName = clients.find(c => c.id === t.client_id)?.name || ''
+      if (!t.description?.toLowerCase().includes(q) && !catName.toLowerCase().includes(q) && !clientName.toLowerCase().includes(q)) return false
+    }
+    return true
+  })
+
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="h5">Транзакции</Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={() => { setEdit(null); setForm({ type: 'income', amount: '', category_id: '', description: '', date: new Date().toISOString().split('T')[0], client_id: '' }); setOpen(true) }}>
+        <Button variant="contained" startIcon={<Add />}
+          onClick={() => { setEdit(null); setForm({ type: 'income', amount: '', category_id: '', description: '', date: new Date().toISOString().split('T')[0], client_id: '' }); setOpen(true) }}>
           Добавить
         </Button>
       </Box>
 
+      <Stack direction="row" spacing={2} sx={{ mb: 2 }} alignItems="center">
+        <FormControl size="small" sx={{ minWidth: 140 }}>
+          <InputLabel>Тип</InputLabel>
+          <Select value={filter.type} label="Тип" onChange={(e) => setFilter({ ...filter, type: e.target.value })}>
+            <MenuItem value="">Все</MenuItem>
+            <MenuItem value="income">Доходы</MenuItem>
+            <MenuItem value="expense">Расходы</MenuItem>
+          </Select>
+        </FormControl>
+        <TextField size="small" placeholder="Поиск..." value={filter.search}
+          onChange={(e) => setFilter({ ...filter, search: e.target.value })}
+          slotProps={{ input: { startAdornment: <Search sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} /> } }} />
+      </Stack>
+
       <Card>
         <CardContent sx={{ p: 0 }}>
-          <TableContainer component={Paper}>
+          <TableContainer component={Paper} sx={{ boxShadow: 'none' }}>
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell>Дата</TableCell>
                   <TableCell>Тип</TableCell>
                   <TableCell>Категория</TableCell>
+                  <TableCell>Клиент</TableCell>
                   <TableCell>Описание</TableCell>
                   <TableCell align="right">Сумма</TableCell>
-                  <TableCell></TableCell>
+                  <TableCell width={80}></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {txns.map((t) => (
-                  <TableRow key={t.id}>
-                    <TableCell>{t.date}</TableCell>
-                    <TableCell>
-                      <Typography color={t.type === 'income' ? 'success.main' : 'error.main'}>
-                        {t.type === 'income' ? 'Доход' : 'Расход'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>{t.category_id ? categories.find(c => c.id === t.category_id)?.name || t.category_id : '-'}</TableCell>
-                    <TableCell>{t.description || '-'}</TableCell>
-                    <TableCell align="right">{t.amount.toLocaleString()} сум</TableCell>
-                    <TableCell>
-                      <IconButton size="small" onClick={() => openEdit(t)}><Edit /></IconButton>
-                      <IconButton size="small" onClick={() => handleDelete(t.id)}><Delete /></IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {txns.length === 0 && (
-                  <TableRow><TableCell colSpan={6} align="center">Нет транзакций</TableCell></TableRow>
+                {filtered.map((t) => {
+                  const catName = categories.find(c => c.id === t.category_id)?.name
+                  const clientName = clients.find(c => c.id === t.client_id)?.name
+                  return (
+                    <TableRow key={t.id} hover>
+                      <TableCell>{t.date}</TableCell>
+                      <TableCell>
+                        <Typography color={t.type === 'income' ? 'success.main' : 'error.main'} fontWeight={600}>
+                          {t.type === 'income' ? 'Доход' : 'Расход'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell><Chip label={catName || '-'} size="small" variant="outlined" /></TableCell>
+                      <TableCell>{clientName || '-'}</TableCell>
+                      <TableCell>{t.description || '-'}</TableCell>
+                      <TableCell align="right" fontWeight={600}>{t.amount.toLocaleString()} сум</TableCell>
+                      <TableCell>
+                        <IconButton size="small" onClick={() => openEdit(t)}><Edit fontSize="small" /></IconButton>
+                        <IconButton size="small" onClick={() => handleDelete(t.id)}><Delete fontSize="small" /></IconButton>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+                {filtered.length === 0 && (
+                  <TableRow><TableCell colSpan={7} align="center" sx={{ py: 4 }}>Нет транзакций</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
@@ -92,7 +122,7 @@ export default function Transactions() {
       </Card>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{edit ? 'Редактировать' : 'Новая транзакция'}</DialogTitle>
+        <DialogTitle sx={{ pb: 1 }}>{edit ? 'Редактировать транзакцию' : 'Новая транзакция'}</DialogTitle>
         <DialogContent>
           <FormControl fullWidth margin="normal">
             <InputLabel>Тип</InputLabel>
@@ -101,7 +131,7 @@ export default function Transactions() {
               <MenuItem value="expense">Расход</MenuItem>
             </Select>
           </FormControl>
-          <TextField label="Сумма" type="number" fullWidth margin="normal" required
+          <TextField label="Сумма" type="number" fullWidth margin="normal" required autoFocus
             value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
           <FormControl fullWidth margin="normal">
             <InputLabel>Категория</InputLabel>
@@ -112,13 +142,20 @@ export default function Transactions() {
               ))}
             </Select>
           </FormControl>
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Клиент</InputLabel>
+            <Select value={form.client_id} onChange={(e) => setForm({ ...form, client_id: e.target.value })} label="Клиент">
+              <MenuItem value="">—</MenuItem>
+              {clients.map((c) => (<MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>))}
+            </Select>
+          </FormControl>
           <TextField label="Описание" fullWidth margin="normal" multiline rows={2}
             value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           <TextField label="Дата" type="date" fullWidth margin="normal" required
             value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Отмена</Button>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setOpen(false)} color="inherit">Отмена</Button>
           <Button variant="contained" onClick={handleSave}>Сохранить</Button>
         </DialogActions>
       </Dialog>
