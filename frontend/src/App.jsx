@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard'
 import Transactions from './pages/Transactions'
 import Clients from './pages/Clients'
 import Invoices from './pages/Invoices'
+import Settings from './pages/Settings'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="transactions" element={<ErrorBoundary><Transactions /></ErrorBoundary>} />
         <Route path="clients" element={<ErrorBoundary><Clients /></ErrorBoundary>} />
         <Route path="invoices" element={<ErrorBoundary><Invoices /></ErrorBoundary>} />
+        <Route path="settings" element={<ErrorBoundary><Settings /></ErrorBoundary>} />
       </Route>
     </Routes>
   )

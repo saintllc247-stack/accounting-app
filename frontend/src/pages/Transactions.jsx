@@ -4,7 +4,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
   TextField, Select, MenuItem, FormControl, InputLabel, Typography, IconButton, Chip, Stack,
 } from '@mui/material'
-import { Add, Edit, Delete, Search } from '@mui/icons-material'
+import { Add, Edit, Delete, Search, Download, Upload } from '@mui/icons-material'
 import api from '../api'
 
 export default function Transactions() {
@@ -14,6 +14,7 @@ export default function Transactions() {
   const [open, setOpen] = useState(false)
   const [edit, setEdit] = useState(null)
   const [filter, setFilter] = useState({ type: '', search: '' })
+  const [importOpen, setImportOpen] = useState(false)
   const [form, setForm] = useState({ type: 'income', amount: '', category_id: '', description: '', date: new Date().toISOString().split('T')[0], client_id: '' })
 
   const load = () => api.get('/transactions').then((r) => setTxns(r.data))
@@ -54,10 +55,19 @@ export default function Transactions() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="h5">Транзакции</Typography>
-        <Button variant="contained" startIcon={<Add />}
-          onClick={() => { setEdit(null); setForm({ type: 'income', amount: '', category_id: '', description: '', date: new Date().toISOString().split('T')[0], client_id: '' }); setOpen(true) }}>
-          Добавить
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button variant="outlined" startIcon={<Upload />} onClick={() => setImportOpen(true)}>
+            Импорт CSV
+          </Button>
+          <Button variant="outlined" startIcon={<Download />}
+            onClick={() => window.open('/api/exports/transactions/excel', '_blank')}>
+            Excel
+          </Button>
+          <Button variant="contained" startIcon={<Add />}
+            onClick={() => { setEdit(null); setForm({ type: 'income', amount: '', category_id: '', description: '', date: new Date().toISOString().split('T')[0], client_id: '' }); setOpen(true) }}>
+            Добавить
+          </Button>
+        </Stack>
       </Box>
 
       <Stack direction="row" spacing={2} sx={{ mb: 2 }} alignItems="center">
@@ -120,6 +130,30 @@ export default function Transactions() {
           </TableContainer>
         </CardContent>
       </Card>
+
+      <Dialog open={importOpen} onClose={() => setImportOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ pb: 1 }}>Импорт транзакций из CSV</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Формат: type,amount,description,date (например: income,100000,оплата,2026-05-10)
+          </Typography>
+          <Button variant="contained" component="label">
+            Выбрать файл
+            <input type="file" accept=".csv" hidden onChange={async (e) => {
+              const file = e.target.files?.[0]
+              if (!file) return
+              const formData = new FormData()
+              formData.append('file', file)
+              await api.post('/exports/transactions/import', formData)
+              setImportOpen(false)
+              load()
+            }} />
+          </Button>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setImportOpen(false)} color="inherit">Закрыть</Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ pb: 1 }}>{edit ? 'Редактировать транзакцию' : 'Новая транзакция'}</DialogTitle>

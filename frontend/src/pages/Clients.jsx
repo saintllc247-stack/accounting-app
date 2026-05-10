@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import {
   Box, Button, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  TextField, Typography, IconButton,
+  TextField, Typography, IconButton, Stack,
 } from '@mui/material'
-import { Add, Edit, Delete } from '@mui/icons-material'
+import { Add, Edit, Delete, Download } from '@mui/icons-material'
 import api from '../api'
 
 export default function Clients() {
@@ -34,10 +34,16 @@ export default function Clients() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5">Клиенты</Typography>
-        <Button variant="contained" startIcon={<Add />}
-          onClick={() => { setEdit(null); setForm({ name: '', email: '', phone: '', address: '', tin: '' }); setOpen(true) }}>
-          Добавить
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button variant="outlined" startIcon={<Download />}
+            onClick={() => window.open('/api/exports/clients/excel', '_blank')}>
+            Excel
+          </Button>
+          <Button variant="contained" startIcon={<Add />}
+            onClick={() => { setEdit(null); setForm({ name: '', email: '', phone: '', address: '', tin: '' }); setOpen(true) }}>
+            Добавить
+          </Button>
+        </Stack>
       </Box>
 
       <Card>

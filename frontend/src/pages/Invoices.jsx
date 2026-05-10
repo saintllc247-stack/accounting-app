@@ -3,8 +3,9 @@ import {
   Box, Button, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
   TextField, Select, MenuItem, FormControl, InputLabel, Typography, IconButton, Chip, Stack, Divider,
+  Snackbar, Alert,
 } from '@mui/material'
-import { Add, Delete, Visibility, Send, Check } from '@mui/icons-material'
+import { Add, Delete, Visibility, Send, Check, Download, Email } from '@mui/icons-material'
 import api from '../api'
 
 const statusColors = { draft: 'default', sent: 'primary', paid: 'success', cancelled: 'error' }
@@ -47,6 +48,18 @@ export default function Invoices() {
     loadInvoices()
   }
 
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' })
+
+  const handleSendEmail = async (inv) => {
+    try {
+      await api.post(`/auth/send-invoice/${inv.id}`)
+      setSnackbar({ open: true, message: 'Счёт отправлен клиенту', severity: 'success' })
+      loadInvoices()
+    } catch (e) {
+      setSnackbar({ open: true, message: e.response?.data?.detail || 'Ошибка отправки', severity: 'error' })
+    }
+  }
+
   const viewInvoice = (inv) => { setSelected(inv); setViewOpen(true) }
 
   return (
@@ -85,6 +98,7 @@ export default function Invoices() {
                       <TableCell>
                         <Stack direction="row" spacing={0.5}>
                           <IconButton size="small" onClick={() => viewInvoice(inv)}><Visibility fontSize="small" /></IconButton>
+                          <IconButton size="small" onClick={() => handleSendEmail(inv)} title="Отправить по email"><Email fontSize="small" /></IconButton>
                           {inv.status === 'draft' && (
                             <>
                               <IconButton size="small" onClick={() => updateStatus(inv.id, 'sent')}><Send fontSize="small" /></IconButton>
@@ -183,6 +197,13 @@ export default function Invoices() {
           <Button onClick={() => setViewOpen(false)} variant="outlined">Закрыть</Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }

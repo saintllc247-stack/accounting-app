@@ -28,6 +28,11 @@ class User(Base):
     email = Column(String(100), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     company_name = Column(String(200), default="")
+    role = Column(String(20), default="admin")
+    smtp_host = Column(String(200), default="")
+    smtp_port = Column(Integer, default=587)
+    smtp_user = Column(String(200), default="")
+    smtp_password = Column(String(200), default="")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     clients = relationship("Client", back_populates="user", cascade="all, delete-orphan")

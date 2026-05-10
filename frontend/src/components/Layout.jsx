@@ -6,7 +6,7 @@ import {
   ListItemIcon, ListItemText, IconButton, Avatar, Menu, MenuItem, Divider, Chip,
 } from '@mui/material'
 import {
-  Menu as MenuIcon, Dashboard, AccountBalanceWallet, People, Receipt, Logout,
+  Menu as MenuIcon, Dashboard, AccountBalanceWallet, People, Receipt, Settings, Logout,
   AccountBalance, DarkMode, LightMode,
 } from '@mui/icons-material'
 
@@ -17,6 +17,7 @@ const menuItems = [
   { text: 'Транзакции', icon: <AccountBalanceWallet />, path: '/transactions' },
   { text: 'Клиенты', icon: <People />, path: '/clients' },
   { text: 'Счета', icon: <Receipt />, path: '/invoices' },
+  { text: 'Настройки', icon: <Settings />, path: '/settings' },
 ]
 
 export default function Layout() {

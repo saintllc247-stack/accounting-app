@@ -21,9 +21,18 @@ class UserOut(BaseModel):
     username: str
     email: str
     company_name: str
+    role: str = "admin"
 
     class Config:
         from_attributes = True
+
+
+class UserSettings(BaseModel):
+    company_name: str = ""
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
 
 
 class Token(BaseModel):
