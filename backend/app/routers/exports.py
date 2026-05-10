@@ -203,7 +203,10 @@ def import_transactions(
             rows.append(dict(zip(headers, row)))
     else:
         content = file.file.read().decode("utf-8-sig")
-        rows = list(csv.DictReader(content.splitlines()))
+        lines = content.splitlines()
+        sniffer = csv.Sniffer()
+        dialect = sniffer.sniff(lines[0] if len(lines) > 1 else lines[0] + "\n" + lines[0])
+        rows = list(csv.DictReader(lines, dialect=dialect))
 
     if not rows:
         return {"imported": 0}
